@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::mem;
 
 pub struct List {
@@ -29,6 +30,26 @@ impl List {
     }
 }
 
+impl Drop for List {
+    fn drop(&mut self) {
+        let mut cur_link = mem::replace(&mut self.head, Link::Empty);
+        while let Link::More(mut boxed_node) = cur_link {
+            cur_link = mem::replace(&mut boxed_node.next, Link::Empty);
+            // boxed_node will be dropped here, freeing the memory
+        }
+    }
+}
+
+enum Link {
+    Empty,
+    More(Box<Node>),
+}
+
+struct Node {
+    elem: i32,
+    next: Link,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -55,24 +76,4 @@ mod tests {
         assert_eq!(list.pop(), Some(1));
         assert_eq!(list.pop(), None);
     }
-}
-
-impl Drop for List {
-    fn drop(&mut self) {
-        let mut cur_link = mem::replace(&mut self.head, Link::Empty);
-        while let Link::More(mut boxed_node) = cur_link {
-            cur_link = mem::replace(&mut boxed_node.next, Link::Empty);
-            // boxed_node will be dropped here, freeing the memory
-        }
-    }
-}
-
-enum Link {
-    Empty,
-    More(Box<Node>),
-}
-
-struct Node {
-    elem: i32,
-    next: Link,
 }
